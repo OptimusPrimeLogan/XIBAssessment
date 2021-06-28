@@ -1,120 +1,77 @@
 package com.xib.assessment;
 
-import com.xib.assessment.entity.Agent;
 import com.xib.assessment.entity.Manager;
 import com.xib.assessment.entity.Team;
-import com.xib.assessment.repository.AgentRepository;
-import com.xib.assessment.repository.ManagerRepository;
-import com.xib.assessment.repository.TeamRepository;
+import com.xib.assessment.service.AgentService;
+import com.xib.assessment.service.ManagerService;
+import com.xib.assessment.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.transaction.Transactional;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Component
 public class LoadTestData {
     @Autowired
-    AgentRepository agentRepository;
+    AgentService agentService;
 
     @Autowired
-    TeamRepository teamRepository;
+    TeamService teamService;
+
     @Autowired
-    ManagerRepository managerRepository;
+    ManagerService managerService;
 
     @PostConstruct
     @Transactional
     public void execute() {
 
-        Manager manager1 = createManager("Karen");
-        Manager manager2 = createManager("Dave");
-        Manager manager3 = createManager("Douglas");
+        try{
 
-        //Team team1 = createTeam("Marvel", manager1);
-        //Team team2 = createTeam("DC", manager2, manager3);
+            Manager karen = managerService.createManager("Karen");
+            Manager dave = managerService.createManager("Dave");
+            Manager doughlas = managerService.createManager("Douglas");
 
-        Team team1 = new Team("Marvel");
-        team1.addManager(manager1);
-        team1 =  teamRepository.saveAndFlush(team1);
+            Set<Manager> oneManager = new HashSet<>();
+            oneManager.add(karen);
 
-        Team team2 = new Team("DC");
-        team2.addManager(manager2);
-        team2.addManager(manager3);
-        team2 =  teamRepository.saveAndFlush(team2);
+            Set<Manager> twoManagers = new HashSet<>();
+            twoManagers.add(karen);
+            twoManagers.add(dave);
 
-        createAgent("Bruce", "Alone", "1011125190081");
-        createAgent("Bruce", "No Manager", "1011125190081", team1);
-        createAgent("Bruce", "No Team", "1011125190081", manager1);
-        createAgent("Tony", "Stark", "6912115191083", team1, manager1);
-        createAgent("Peter", "Parker", "7801115190084", team1, manager1);
-        createAgent("Bruce", "Wayne", "6511185190085", team2, manager1);
-        createAgent("Clark", "Kent", "5905115190086",team2, manager2);
+            Set<Manager> managerWhoHasThreeTeams = new HashSet<>();
+            managerWhoHasThreeTeams.add(doughlas);
 
+            Team marvel = teamService.createTeam ("Marvel");
+            marvel = (Team) teamService.assignManagers(marvel, oneManager);
+
+            Team dc = teamService.createTeam ("DC");
+            dc =(Team) teamService.assignManagers(dc, twoManagers);
+
+            Team powerPuff = teamService.createTeam ("PowerPuff");
+            Team powerPuff2 = teamService.createTeam ("PowerPuff2");
+            Team powerPuff3 = teamService.createTeam ("PowerPuff3");
+            powerPuff = (Team) teamService.assignManagers(powerPuff, managerWhoHasThreeTeams);
+            powerPuff2 = (Team) teamService.assignManagers(powerPuff2, managerWhoHasThreeTeams);
+            powerPuff3 = (Team) teamService.assignManagers(powerPuff3, managerWhoHasThreeTeams);
+
+            agentService.createAgent("Bruce", "Alone", "1011125190081");
+            agentService.createAgentAndAssignToTeam("Bruce", "No Manager", "1011125190081", marvel);
+            agentService.createAgentAndAssignToManager("Bruce", "No Team", "1011125190081", karen);
+
+            agentService.createAgentAndSetup("Tony", "Stark", "6912115191083", marvel, karen);
+            agentService.createAgentAndSetup("Peter", "Parker", "7801115190084", marvel, karen);
+            agentService.createAgentAndSetup("Bruce", "Wayne", "6511185190085", dc, karen);
+            agentService.createAgentAndSetup("Clark", "Kent", "5905115190086",dc, dave);
+
+
+
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
 
     }
-
-
-
-    private Agent createAgent(String firstName, String lastName, String idNumber) {
-        Agent a = new Agent();
-        a.setFirstName(firstName);
-        a.setLastName(lastName);
-        a.setIdNumber(idNumber);
-        return agentRepository.saveAndFlush(a);
-    }
-
-    private Agent createAgent(String firstName, String lastName, String idNumber, Team team1) {
-        Agent a = new Agent();
-        a.setFirstName(firstName);
-        a.setLastName(lastName);
-        a.setIdNumber(idNumber);
-        a.setTeam(team1);
-        return agentRepository.saveAndFlush(a);
-    }
-
-    private Agent createAgent(String firstName, String lastName, String idNumber, Manager manager1) {
-        Agent a = new Agent();
-        a.setFirstName(firstName);
-        a.setLastName(lastName);
-        a.setIdNumber(idNumber);
-        a.setManager(manager1);
-        return agentRepository.saveAndFlush(a);
-    }
-
-    private Agent createAgent(String firstName, String lastName, String idNumber, Team team, Manager manager) {
-        Agent a = new Agent();
-        a.setFirstName(firstName);
-        a.setLastName(lastName);
-        a.setIdNumber(idNumber);
-        a.setTeam(team);
-        a.setManager(manager);
-        return agentRepository.saveAndFlush(a);
-    }
-
-    private Manager createManager(String abc) {
-        Manager m = new Manager();
-        m.setName(abc);
-        return managerRepository.saveAndFlush(m);
-    }
-
-    private Team createTeam(String name, Manager manager) {
-        Team t = new Team();
-        t.setName(name);
-        t.addManager(manager);
-        return teamRepository.saveAndFlush(t);
-    }
-
-    private Team createTeam(String name, Manager manager, Manager assistantManager) {
-        Team t = new Team();
-        t.setName(name);
-        t.addManager(manager);
-        t.addManager(assistantManager);
-        return teamRepository.saveAndFlush(t);
-    }
-
 
 }

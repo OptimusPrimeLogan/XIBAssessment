@@ -1,9 +1,6 @@
 package com.xib.assessment.controller;
 
 import com.xib.assessment.entity.Agent;
-import com.xib.assessment.repository.AgentRepository;
-import com.xib.assessment.repository.ManagerRepository;
-import com.xib.assessment.repository.TeamRepository;
 import com.xib.assessment.service.AgentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,30 +14,23 @@ import java.util.Optional;
 public class AgentController {
 
     @Autowired
-    private AgentRepository agentRepository;
-
-    @Autowired
     private AgentService agentService;
 
     @GetMapping("agent/{id}")
-    public Optional<Agent> findAgent(@PathVariable("id") Long id) {
-        return agentRepository.findById(id);
-    }
+    public Optional<Agent> findAgent(@PathVariable("id") Long agentId) { return agentService.findAgent(agentId); }
 
     @GetMapping("agents/")
     public List<Agent> findAgents() {
-        return agentRepository.findAll();
+        return agentService.findAgents();
     }
 
     @PostMapping("agent/")
     public ResponseEntity<Object> createAgent(@RequestBody Agent requestAgent) {
 
         try{
-            Agent transactionAgent = new Agent();
-            transactionAgent.setFirstName(requestAgent.getFirstName());
-            transactionAgent.setLastName(requestAgent.getLastName());
-            transactionAgent.setIdNumber(requestAgent.getIdNumber());
-            return new ResponseEntity<>(agentRepository.saveAndFlush(transactionAgent), HttpStatus.OK);
+            return new ResponseEntity<>(agentService.createAgent(
+                    requestAgent.getFirstName(), requestAgent.getLastName(), requestAgent.getIdNumber()),
+                    HttpStatus.OK);
         }catch(Exception ex){
             return new ResponseEntity<>(
                     "Error while creating new agent: "+ex.getMessage(),
@@ -57,6 +47,12 @@ public class AgentController {
             @RequestParam(defaultValue = "desc") String sortOrder)
     {
         return new ResponseEntity<>(agentService.getAgentsWithParameter(pageNo, pageSize, sortBy, sortOrder), HttpStatus.OK);
+    }
+
+    @GetMapping("agents/notAssigned")
+    public ResponseEntity<?> notAssignedAgents() {
+        return new ResponseEntity<>(agentService.findByTeamAndManager(null, null),
+                HttpStatus.OK);
     }
 
 }

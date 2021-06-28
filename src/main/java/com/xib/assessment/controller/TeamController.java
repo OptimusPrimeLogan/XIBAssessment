@@ -2,8 +2,8 @@ package com.xib.assessment.controller;
 
 import com.xib.assessment.entity.Agent;
 import com.xib.assessment.entity.Team;
-import com.xib.assessment.repository.TeamRepository;
 import com.xib.assessment.service.MappingService;
+import com.xib.assessment.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,27 +16,25 @@ import java.util.Optional;
 public class TeamController {
 
     @Autowired
-    private TeamRepository teamRepository;
+    private TeamService teamService;
 
     @Autowired
     private MappingService mappingService;
 
     @GetMapping("team/{id}/")
-    public Optional<Team> findTeam(@PathVariable("id") Long id) {
-        return teamRepository.findById(id);
+    public Optional<Team> findTeam(@PathVariable("id") Long teamId) {
+        return teamService.findTeam(teamId);
     }
 
     @GetMapping("teams")
     public List<Team> findTeams() {
-        return teamRepository.findAll();
+        return teamService.findTeams();
     }
 
     @PostMapping("team/")
     public ResponseEntity<Object> createTeam(@RequestBody Team requestTeam) {
         try{
-            Team transactionTeam = new Team();
-            transactionTeam.setName(requestTeam.getName());
-            return new ResponseEntity<>(teamRepository.saveAndFlush(transactionTeam), HttpStatus.OK);
+            return new ResponseEntity<>(teamService.createTeam(requestTeam.getName()), HttpStatus.OK);
         }catch(Exception ex){
             return new ResponseEntity<>(
                     "Error while creating new team: "+ex.getMessage(),
@@ -45,18 +43,17 @@ public class TeamController {
     }
 
     @PutMapping("team/{id}/agent")
-    public ResponseEntity<Object> assignAgentToTeam(@PathVariable("id") Long teamId, @RequestBody Agent agent){
+    public ResponseEntity<Object> assignAgentToTeam(@PathVariable("id") Long teamId, @RequestBody Agent agent) {
 
-        try{
-            //mappingService
-            return new ResponseEntity<>("teamId: "+teamId+" agent:"+agent.getLastName(), HttpStatus.OK);
-        }catch(Exception ex){
-            return new ResponseEntity<>(
-                    "Error while creating new team: "+ex.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+            Object assignedTeam =  mappingService.assignAgentToTeam(teamId, agent);
+
+            if(assignedTeam instanceof Exception){
+                return new ResponseEntity<>("Error while assigning agent to team: "+((Exception) assignedTeam).getMessage(),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }else{
+                return new ResponseEntity<>(assignedTeam, HttpStatus.OK);
+            }
 
     }
-
 
 }
